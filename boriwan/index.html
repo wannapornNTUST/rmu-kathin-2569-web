@@ -325,7 +325,7 @@ a{color:#1b6044}
 </main><script>
 let app=null,my=null;let newCounts={};let editCounts={};let catalogBySku_=new Map();let catalogSearchTimer_=null;
 const BORIWAN_STOCK_TOTAL_=[1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,1,1,2,2,2,1,1,3,1,3,1,1,1,1,1,3,1,1,1,1,1,1,1,2,1,1,1,1,3,10];
-const BORIWAN_PRE_RESERVED_={K001:1,K011:1};
+const BORIWAN_PRE_RESERVED_={};
 
 const BANK_QR_SRC="./assets/bank-qr.jpg";
 const BANK_ACCOUNT_CARD_SRC="./assets/bank-account.jpg";
@@ -507,7 +507,7 @@ function qtyInput(it,value,kind){
  const stock=stockStatus_(it);
  const left=stock.remaining;
  const disabled=left===0?' disabled':'';
- const note=left===0?'เต็มแล้ว / มีผู้จองครบจำนวน':(stock.authoritative?'คงเหลือ '+fmt(left)+' จาก '+fmt(stock.total)+' '+esc(it.unit):'ตามเอกสารเหลือได้สูงสุด '+fmt(left)+' จาก '+fmt(stock.total)+' '+esc(it.unit));
+ const note=left===0?'เต็มแล้ว / มีผู้จองครบจำนวน':(stock.authoritative?'คงเหลือ '+fmt(left)+' จาก '+fmt(stock.total)+' '+esc(it.unit):'จำนวนตั้งต้นคงเหลือสูงสุด '+fmt(left)+' จาก '+fmt(stock.total)+' '+esc(it.unit));
  const inputMax=inp==='new'?left:10000;
  const isDisabled=inp==='new'&&left===0?' disabled':'';
  return `<div class="item"><div><b>${esc(it.name)}</b><div class="muted">${fmt(it.price)} บาท/${esc(it.unit)}</div><div class="muted" style="color:${left===0?'#9b3d2f':'#276a43'};font-weight:600">${note}</div></div><div class="stepper"><button class="secondary" type="button" onclick="delta('${inp}','${esc(it.sku)}',-1)"${isDisabled}>−</button><input type="number" min="0" max="${inputMax}" step="1" value="${Number(value)||0}" id="${inp}-${esc(it.sku)}" onchange="qtyChange('${inp}','${esc(it.sku)}',this.value)"${isDisabled}><button class="secondary" type="button" onclick="delta('${inp}','${esc(it.sku)}',1)"${isDisabled}>+</button></div></div>`;
