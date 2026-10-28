@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#164c36">
+<meta name="description" content="ทางเข้าเว็บไซต์ร่วมทำบุญบริวารกฐิน ในงานกฐินสามัคคี มหาวิทยาลัยราชภัฏมหาสารคาม พ.ศ. 2569">
+<title>ร่วมทำบุญบริวารกฐิน 2569 | มหาวิทยาลัยราชภัฏมหาสารคาม</title>
+<style>
+:root{font-family:Tahoma,"Noto Sans Thai",Arial,sans-serif;color:#18392c;background:#f7f2e6}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 5%,#f8e5b9 0,transparent 35%),linear-gradient(170deg,#fffdf8,#f1ecdd)}
+main{max-width:730px;margin:auto;padding:38px 16px 55px}
+.hero{position:relative;overflow:hidden;border-radius:24px;background:linear-gradient(120deg,#103e2a,#1b6443);color:#fffcf4;text-align:center;padding:40px 24px;border:2px solid #d4a33a;box-shadow:0 12px 32px #1c4f3233}
+.hero::after{content:"";position:absolute;width:200px;height:200px;border:1px solid #e5c47580;border-radius:50%;right:-130px;top:-110px}
+.eyebrow{color:#f8d88c;font-size:14px;letter-spacing:.03em}h1{font-size:clamp(26px,5vw,40px);line-height:1.35;margin:14px 0}p{line-height:1.8}.hero p{margin:6px 0}
+.card{background:#fffefa;padding:28px 24px;margin-top:18px;border:1px solid #e5d6b5;border-radius:22px;box-shadow:0 4px 16px #324a2710}
+h2{font-size:21px;margin:0 0 12px}.steps{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 24px}
+.steps span{background:#eff5ee;color:#21583c;border-radius:40px;padding:7px 12px;font-size:13px;font-weight:bold}
+.button{display:block;text-align:center;border-radius:13px;background:#17603c;color:white;font-weight:bold;text-decoration:none;padding:15px 20px;font-size:18px;border:0;width:100%;min-height:52px}
+.button[aria-disabled="true"]{background:#a7afa5;cursor:not-allowed;color:white;pointer-events:none}
+.status{margin:16px 0 0;font-size:14px;color:#835e2d;background:#fff5de;border:1px solid #f0d29a;padding:13px;border-radius:12px}
+.small{font-size:13px;color:#68736a}.foot{text-align:center;color:#6c715d;font-size:12px;margin-top:24px}
+a:focus-visible{outline:3px solid #e4b64f;outline-offset:3px}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+  <div class="eyebrow">มหาวิทยาลัยราชภัฏมหาสารคาม · พ.ศ. 2569</div>
+  <h1>ร่วมทำบุญบริวารกฐิน</h1>
+  <p>งานกฐินสามัคคี มหาวิทยาลัยราชภัฏมหาสารคาม</p>
+  <p>ทอดกฐิน 14 พฤศจิกายน 2569</p>
+  <p>วัดเม่นใหญ่ บ้านเม่นใหญ่ จังหวัดมหาสารคาม</p>
+</header>
+<section class="card" aria-labelledby="enter-title">
+  <h2 id="enter-title">เข้าสู่เว็บไซต์ร่วมทำบุญ</h2>
+  <p>เลือกสิ่งของบริวารกฐิน กรอกชื่อ โอนเงินผ่าน QR/เลขบัญชีที่แสดงในระบบ และแนบสลิปเพื่อแจ้งโอนได้ทันที ไม่ต้องจองล่วงหน้า</p>
+  <div class="steps"><span>1 · เลือกสิ่งของ</span><span>2 · โอนเงิน</span><span>3 · ส่งสลิป</span></div>
+  <a class="button" id="entry" href="#" aria-disabled="true" tabindex="-1">กำลังเตรียมทางเข้าเว็บไซต์</a>
+  <p id="status" class="status" role="status">ยังไม่ได้เชื่อมลิงก์ Google Apps Script Public ที่ยืนยันแล้ว โปรดอย่าใช้หน้านี้เพื่อโอนเงินจริงในขณะนี้</p>
+  <p class="small">ลิงก์หน้านี้เป็นทางเข้าคงที่บน GitHub Pages ระบบรับสลิปและตรวจยอดยังอยู่ใน Google Apps Script และ Google Sheets เดิม</p>
+</section>
+<section class="card">
+  <h2>ติดต่อผู้ดูแล</h2>
+  <p>สำนักศิลปะและวัฒนธรรม มหาวิทยาลัยราชภัฏมหาสารคาม</p>
+  <p><a href="tel:043721839">โทร 043-721839</a></p>
+</section>
+<footer class="foot">พัฒนาเว็บแอปพลิเคชันโดย วรรณพร สารภักดิ์</footer>
+</main>
+<script>
+(async function () {
+  const link = document.getElementById('entry');
+  const status = document.getElementById('status');
+  try {
+    const resp=await fetch('./config.json',{cache:'no-store'});
+    if(!resp.ok) return;
+    const cfg=await resp.json();
+    const u=new URL(cfg.appsScriptPublicUrl || '');
+    if(u.protocol !== 'https:' || u.hostname !== 'script.google.com'
+      || !/^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname)
+      || u.search || u.hash) return;
+    link.href=u.href;
+    link.textContent='เปิดระบบร่วมทำบุญบริวารกฐิน';
+    link.removeAttribute('aria-disabled');
+    link.removeAttribute('tabindex');
+    status.textContent='ลิงก์ทางเข้าพร้อมใช้งาน หากกดแล้วเข้าระบบไม่ได้ กรุณาติดต่อผู้ดูแล';
+    status.style.background='#eef7ed';
+    status.style.borderColor='#c6ddc0';
+    status.style.color='#22563d';
+  } catch (e) {
+    // Fail closed: never redirect to an unverified payment destination.
+  }
+})();
+</script>
+</body>
+</html>
