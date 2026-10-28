@@ -256,7 +256,7 @@ a{color:#1b6044}
   </details>
 </section>
 <section class="card"><h2 id="directFlowTitle">เลือกบริวารกฐิน แล้วโอนเงินได้ทันที</h2><p class="muted">เลือกสิ่งของและจำนวน → กรอกชื่อ → โอนเงินตามยอดที่ระบบคำนวณ → แนบสลิปและส่งแจ้งโอน <b>ไม่ต้องสมัครสมาชิกหรือใช้อีเมล</b></p><p class="warning" id="transferCutoffNotice">รับรายการบริวารกฐินพร้อมหลักฐานการโอนถึง <b>11 พฤศจิกายน 2569 เวลา 23:59 น. (เวลาไทย)</b> เมื่อเลยกำหนด ระบบจะปิดรับทันที</p></section>
-<section id="newTab" class="card"><h2>1. เลือกสิ่งของบริวารกฐิน</h2><div class="muted">สามารถเลือกหลายรายการ และกำหนดจำนวนได้เอง ไม่มีข้อจำกัดสต็อกตามรายการเดิม</div><label for="catalogSearch">ค้นหาสิ่งของที่ต้องการทำบุญ</label><input id="catalogSearch" type="search" placeholder="เช่น สังฆทาน ผ้าไตร ไม้กวาด" oninput="scheduleCatalogRender_()" autocomplete="off"><p class="muted">รายการทั้งหมดจัดตามหมวดหมู่ เลือกจำนวนแล้วระบบรวมยอดให้เอง</p><div id="catalog" aria-busy="true"><p class="muted" role="status">กำลังตรวจสอบรายการสิ่งของและราคาล่าสุดจากระบบ…</p></div>
+<section id="newTab" class="card"><h2>1. เลือกสิ่งของบริวารกฐิน</h2><div class="muted">สามารถเลือกหลายรายการ และกำหนดจำนวนได้เอง ไม่มีข้อจำกัดสต็อกตามรายการเดิม</div><label for="catalogSearch">ค้นหาสิ่งของที่ต้องการทำบุญ</label><input id="catalogSearch" type="search" placeholder="เช่น สังฆทาน ผ้าไตร ไม้กวาด" oninput="scheduleCatalogRender_()" autocomplete="off"><p class="muted">รายการทั้งหมดจัดตามหมวดหมู่ เลือกจำนวนแล้วระบบรวมยอดให้เอง</p><p class="muted" id="inventoryStatusNote">กำลังตรวจสอบจำนวนสิ่งของคงเหลือ...</p><div id="catalog" aria-busy="true"><p class="muted" role="status">กำลังตรวจสอบรายการสิ่งของและราคาล่าสุดจากระบบ…</p></div>
 <div class="selected-summary" id="selectedSummary" aria-label="สรุปรายการทำบุญที่เลือก">
   <div class="selected-title"><h3>สรุปรายการทำบุญที่เลือก</h3><span class="muted" id="selectedCount">ยังไม่ได้เลือกรายการ</span></div>
   <div class="selected-lines" id="selectedLines" aria-live="polite"><p class="selected-empty">เมื่อเลือกสิ่งของ รายละเอียดและยอดแต่ละรายการจะแสดงตรงนี้</p></div>
@@ -324,6 +324,9 @@ a{color:#1b6044}
 </footer>
 </main><script>
 let app=null,my=null;let newCounts={};let editCounts={};let catalogBySku_=new Map();let catalogSearchTimer_=null;
+const BORIWAN_STOCK_TOTAL_=[1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,1,1,2,2,2,1,1,3,1,3,1,1,1,1,1,3,1,1,1,1,1,1,1,2,1,1,1,1,3,10];
+const BORIWAN_PRE_RESERVED_={K001:1,K011:1};
+
 const BANK_QR_SRC="./assets/bank-qr.jpg";
 const BANK_ACCOUNT_CARD_SRC="./assets/bank-account.jpg";
 const CONTACT_LINE_URL="https://line.me/ti/p/_V5sCkLbGK";
@@ -488,14 +491,48 @@ async function loadPublicPeople(reset){
    if(id===publicPeopleState.requestId){publicPeopleState.loading=false;$('publicPeopleMore').disabled=false;}
  }
 }
-function qtyInput(it,value,kind){const inp=kind==='edit'?'edit':'new';return `<div class="item"><div><b>${esc(it.name)}</b><div class="muted">${fmt(it.price)} บาท/${esc(it.unit)}</div></div><div class="stepper"><button class="secondary" type="button" onclick="delta('${inp}','${esc(it.sku)}',-1)">−</button><input type="number" min="0" step="1" value="${Number(value)||0}" id="${inp}-${esc(it.sku)}" onchange="qtyChange('${inp}','${esc(it.sku)}',this.value)"><button class="secondary" type="button" onclick="delta('${inp}','${esc(it.sku)}',1)">+</button></div></div>`;}
+function stockStatus_(it){
+ const sku=String(it.sku||'');
+ const num=Number(sku.slice(1))-1;
+ const docTotal=BORIWAN_STOCK_TOTAL_[num];
+ const total=Number.isSafeInteger(Number(it.stockTotal))?Number(it.stockTotal):docTotal;
+ const reserved=Number.isSafeInteger(Number(it.preReserved))?Number(it.preReserved):(BORIWAN_PRE_RESERVED_[sku]||0);
+ const fromBackend=app&&app.inventoryEnabled===true&&Number.isSafeInteger(Number(it.stockRemaining));
+ const approved=fromBackend?0:Number((app?.summary?.items||[]).find(x=>x.sku===sku)?.qty||0);
+ const remaining=fromBackend?Number(it.stockRemaining):Math.max(0,Number(total||0)-reserved-approved);
+ return {total:Number(total||0),reserved,remaining:Math.max(0,remaining),authoritative:!!fromBackend};
+}
+function qtyInput(it,value,kind){
+ const inp=kind==='edit'?'edit':'new';
+ const stock=stockStatus_(it);
+ const left=stock.remaining;
+ const disabled=left===0?' disabled':'';
+ const note=left===0?'เต็มแล้ว / มีผู้จองครบจำนวน':(stock.authoritative?'คงเหลือ '+fmt(left)+' จาก '+fmt(stock.total)+' '+esc(it.unit):'ตามเอกสารเหลือได้สูงสุด '+fmt(left)+' จาก '+fmt(stock.total)+' '+esc(it.unit));
+ const inputMax=inp==='new'?left:10000;
+ const isDisabled=inp==='new'&&left===0?' disabled':'';
+ return `<div class="item"><div><b>${esc(it.name)}</b><div class="muted">${fmt(it.price)} บาท/${esc(it.unit)}</div><div class="muted" style="color:${left===0?'#9b3d2f':'#276a43'};font-weight:600">${note}</div></div><div class="stepper"><button class="secondary" type="button" onclick="delta('${inp}','${esc(it.sku)}',-1)"${isDisabled}>−</button><input type="number" min="0" max="${inputMax}" step="1" value="${Number(value)||0}" id="${inp}-${esc(it.sku)}" onchange="qtyChange('${inp}','${esc(it.sku)}',this.value)"${isDisabled}><button class="secondary" type="button" onclick="delta('${inp}','${esc(it.sku)}',1)"${isDisabled}>+</button></div></div>`;
+}
 function scheduleCatalogRender_(){
   if(catalogSearchTimer_)clearTimeout(catalogSearchTimer_);
   catalogSearchTimer_=setTimeout(()=>{catalogSearchTimer_=null;catRender();},120);
 }
 function catRender(){const groups={};const keyword=($('catalogSearch')?.value||'').trim().toLocaleLowerCase('th-TH');app.catalog.filter(it=>!keyword||(it.name+' '+it.category).toLocaleLowerCase('th-TH').includes(keyword)).forEach(x=>(groups[x.category]??=[]).push(x));$('catalog').setAttribute('aria-busy','false');$('catalog').innerHTML=Object.keys(groups).length?Object.entries(groups).map(([name,its])=>`<details class="catgroup" ${keyword?'open':''}><summary>${esc(name)} (${its.length} รายการ)</summary>${its.map(it=>qtyInput(it,newCounts[it.sku]||0,'new')).join('')}</details>`).join(''):'<p class="muted">ไม่พบรายการที่ค้นหา ลองใช้คำอื่น</p>';calcNew();}
-function delta(kind,sku,n){let obj=kind==='new'?newCounts:editCounts;obj[sku]=Math.max(0,(Number(obj[sku])||0)+n);$(kind+'-'+sku).value=obj[sku];kind==='new'?calcNew():calcEdit();}
-function qtyChange(kind,sku,v){let obj=kind==='new'?newCounts:editCounts;let n=Number(v);obj[sku]=Number.isSafeInteger(n)&&n>=0?Math.min(n,10000):0;$(kind+'-'+sku).value=obj[sku];kind==='new'?calcNew():calcEdit();}
+function delta(kind,sku,n){
+ const obj=kind==='new'?newCounts:editCounts;
+ const it=catalogBySku_.get(sku);
+ const max=kind==='new'?(it?stockStatus_(it).remaining:0):10000;
+ obj[sku]=Math.min(max,Math.max(0,(Number(obj[sku])||0)+n));
+ $(kind+'-'+sku).value=obj[sku];
+ kind==='new'?calcNew():calcEdit();
+}
+function qtyChange(kind,sku,v){
+ const obj=kind==='new'?newCounts:editCounts;
+ const n=Number(v),it=catalogBySku_.get(sku);
+ const max=kind==='new'?(it?stockStatus_(it).remaining:0):10000;
+ obj[sku]=Number.isSafeInteger(n)&&n>=0?Math.min(n,max):0;
+ $(kind+'-'+sku).value=obj[sku];
+ kind==='new'?calcNew():calcEdit();
+}
 function selected(kind){const o=kind==='new'?newCounts:editCounts;return app.catalog.filter(x=>(o[x.sku]||0)>0).map(x=>({sku:x.sku,qty:o[x.sku]}));}
 function totalCalc(items){return items.reduce((a,x)=>{let c=catalogBySku_.get(x.sku);return a+(c?c.price*x.qty:0);},0);}
 function calcNew(){
@@ -688,7 +725,14 @@ async function refreshPublic(){
   const fresh=await askServer('getPublicData');
   if(!fresh||!Array.isArray(fresh.catalog)||!fresh.summary)throw new Error('ข้อมูลหน้าเว็บไม่ครบ');
   app=fresh;
+  const note=$('inventoryStatusNote');
+  if(note)note.textContent=app.inventoryEnabled===true?'จำนวนคงเหลือรวมรายการส่งสลิปรอตรวจสอบและที่อนุมัติแล้ว':'จำนวนที่แสดงเป็นเพดานเบื้องต้นตามเอกสาร (ยังไม่รวมสลิปที่รอตรวจ) ระบบหลังบ้านยังไม่เปิดใช้ตรวจสต็อกอัตโนมัติ';
   catalogBySku_=new Map(app.catalog.map(c=>[c.sku,c]));
+  for(const [sku,count] of Object.entries(newCounts)){
+    const it=catalogBySku_.get(sku);
+    if(!it){delete newCounts[sku];continue;}
+    newCounts[sku]=Math.min(count,stockStatus_(it).remaining);
+  }
   showSummary(app.summary);
   updateCutoffView_();
   catRender();
@@ -713,6 +757,7 @@ async function submitDonationUI(){
  if(!app.paymentEnabled)return showMessage('ยังไม่เปิดรับแจ้งโอน กรุณาติดต่อผู้ดูแล','warning');
  const items=selected('new');
  if(!items.length)return showMessage('กรุณาเลือกรายการทำบุญก่อน','warning');
+ for(const x of items){const it=catalogBySku_.get(x.sku);if(!it||x.qty>stockStatus_(it).remaining)return showMessage('จำนวนสิ่งของเปลี่ยนแปลง โปรดตรวจสอบและปรับรายการก่อนส่งสลิป','warning');}
  const total=Math.round(totalCalc(items)*100)/100;
  if(total<=0)return showMessage('ยอดเงินต้องมากกว่า 0 บาท','warning');
  if($('donorName').value.trim().length<2)return showMessage('กรุณากรอกชื่อผู้ร่วมทำบุญ','warning');
@@ -741,6 +786,7 @@ async function submitDonationUI(){
      'วันที่โอน '+dateLabel+'\n'+
      'ไฟล์สลิป '+file.name+'\n'+
      (amountsMatch?'':'ยอดต่างจากรายการ '+fmt(Math.abs(amount-total))+' บาท (รอตรวจสอบ)\n')+
+     (app.inventoryEnabled===true?'':'ขณะนี้จำนวนคงเหลือยังไม่ได้กันสิ่งของอัตโนมัติบนเซิร์ฟเวอร์ โปรดติดต่อผู้ดูแลหากเป็นชิ้นสุดท้าย\n')+
      'ตรวจข้อมูลถูกต้องแล้ว กด “ส่งแจ้งโอน”'
  });
  if(!yes)return;
