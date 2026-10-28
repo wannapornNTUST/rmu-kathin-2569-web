@@ -227,7 +227,7 @@ a{color:#1b6044}
 .success-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:16px 0}
 .success-actions button{flex:1 1 180px}
 @media(max-width:540px){.direct-success-card h2{font-size:20px}.success-actions button{flex:1 1 100%;min-height:45px}}
-</style></head><body><div id="loading">กำลังบันทึกข้อมูล กรุณารอสักครู่…</div>
+</style></head><body><div id="boriwanApiNotice" style="padding:12px;text-align:center;background:#fff4d1;color:#6b4d16;border-bottom:1px solid #e0be66;font-weight:bold">ระบบบริวารกฐินกำลังเตรียมเชื่อมต่อ API ยังไม่เปิดรับส่งสลิปผ่าน GitHub</div><div id="loading">กำลังบันทึกข้อมูล กรุณารอสักครู่…</div>
 <div id="kathinDialog" class="kathin-dialog-overlay" hidden>
  <div class="kathin-dialog-box" role="alertdialog" aria-modal="true" aria-labelledby="kathinDialogTitle" aria-describedby="kathinDialogMessage">
   <h2 id="kathinDialogTitle">แจ้งเตือนจากระบบกฐิน</h2>
@@ -387,6 +387,7 @@ function boriwanConfig_(){
   boriwanApiConfigPromise_=fetch('./api-config.json',{cache:'no-store'})
    .then(r=>{if(!r.ok)throw new Error('ยังไม่ได้ตั้งค่าระบบเชื่อมต่อ');return r.json();})
    .then(c=>{
+    if(!c.apiUrl)throw new Error('ระบบบริวารกฐินยังไม่เปิดเชื่อม API กรุณาติดต่อผู้ดูแล');
     const u=new URL(String(c.apiUrl||''));
     if(u.protocol!=='https:' || !u.hostname.endsWith('.workers.dev') || u.search || u.hash)
      throw new Error('ยังไม่ได้เปิด API บริวารกฐินแยกจากระบบบริจาคเงิน');
@@ -686,6 +687,7 @@ async function refreshPublic(){
   const fresh=await askServer('getPublicData');
   if(!fresh||!Array.isArray(fresh.catalog)||!fresh.summary)throw new Error('ข้อมูลหน้าเว็บไม่ครบ');
   app=fresh;
+  const n=document.getElementById('boriwanApiNotice');if(n)n.hidden=true;
   catalogBySku_=new Map(app.catalog.map(c=>[c.sku,c]));
   showSummary(app.summary);
   updateCutoffView_();
