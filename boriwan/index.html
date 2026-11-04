@@ -327,8 +327,9 @@ let app=null,my=null;let newCounts={};let editCounts={};let catalogBySku_=new Ma
 const BORIWAN_STOCK_TOTAL_=[1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,1,1,2,2,2,1,1,3,1,3,1,1,1,1,1,3,1,1,1,1,1,1,1,2,1,1,1,1,3,10];
 const BORIWAN_PRE_RESERVED_={};
 
-const BANK_QR_SRC="./assets/bank-qr.jpg";
-const BANK_ACCOUNT_CARD_SRC="./assets/bank-account.jpg";
+// University's existing, finance-approved e-Donation QR (same artwork as main Kathin site).
+const BANK_QR_SRC="./assets/university-edonation-qr.jpg";
+const UNIVERSITY_BANK=Object.freeze({name:"ธนาคารกรุงไทย",owner:"เงินบริจาคมหาวิทยาลัยราชภัฏมหาสารคาม",account:"476-0-21839-4"});
 const CONTACT_LINE_URL="https://line.me/ti/p/_V5sCkLbGK";
 
 const $=id=>document.getElementById(id);
@@ -570,18 +571,11 @@ function toggleEmail(){
 }
 function switchTab(which){ if(which==='new')$('newTab').classList.remove('hidden'); }
 function downloadBankQr(){
- try {
-   const parts=BANK_QR_SRC.split(',');
-   if(parts.length!==2)throw new Error('ไม่พบภาพ QR');
-   const bytes=atob(parts[1]);
-   const arr=new Uint8Array(bytes.length);
-   for(let i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);
-   const blob=new Blob([arr],{type:'image/jpeg'});
-   const fileUrl=URL.createObjectURL(blob);
-   const a=document.createElement('a');a.href=fileUrl;a.download='kathin69_kbank_qr.jpg';
-   document.body.appendChild(a);a.click();a.remove();
-   setTimeout(()=>URL.revokeObjectURL(fileUrl),2000);
- } catch(err){showMessage('บันทึก QR ไม่สำเร็จ กรุณาแตะที่รูป QR ค้างไว้แล้วเลือกบันทึกภาพ','warning');}
+  // Download original QR JPEG unchanged, never fabricate a code from the account number.
+  const a=document.createElement('a');
+  a.href=BANK_QR_SRC;
+  a.download='kathin69_university_edonation_qr.jpg';
+  document.body.appendChild(a);a.click();a.remove();
 }
 const DIRECT_TH_MONTH_NAMES_={10:'ตุลาคม',11:'พฤศจิกายน'};
 let directPageOpenThaiTime_=null;
@@ -595,7 +589,7 @@ function thaiNowForTransfer_(){
     day:Number(parts.day), month:Number(parts.month),year:Number(parts.year)};
 }
 function copyBankAccount(){
-  const account=app&&app.bank&&app.bank.account?String(app.bank.account):'';
+  const account=UNIVERSITY_BANK.account;
   if(!account)return showMessage('ไม่พบเลขบัญชี โปรดโหลดหน้าใหม่','warning');
   const status=$('bankCopyStatus');
   function success(){if(status)status.textContent='คัดลอกเลขบัญชีแล้ว: '+account;}
@@ -696,13 +690,18 @@ function updateDirectAmountDifference_(){
 }
 
 function bankPanelHtml_(){
- if(!app || !app.bank) return '<div class="warning">ไม่สามารถโหลดรายละเอียดบัญชีได้ กรุณาติดต่อผู้ดูแล</div>';
- // Do not show a payment QR or new-transfer invitation after the bank cutoff.
+ if(!app) return '<div class="warning">ไม่สามารถโหลดรายละเอียดบัญชีได้ กรุณาติดต่อผู้ดูแล</div>';
  if(!app.donationOpen) return '<div class="warning">ปิดรับรายการและแจ้งโอนแล้ว (11 พ.ย. 2569 เวลา 23:59 น.)</div>';
- // Display organiser-supplied KBank QR to selected donors and for historical private records.
- // The BANK_CONFIRMED property still independently locks donor payment notification on the server.
- const banner=app.paymentEnabled ? '' : '<div class="warning qr-mode-warning"><b>โหมดทดสอบ — แสดง QR สำหรับตรวจสอบเท่านั้น ยังไม่เปิดให้แจ้งโอนหรือส่งสลิป</b> กรุณารอประกาศจากผู้จัดงานก่อนทำการโอน</div>';
- return `<div class="qr-panel">${banner}<strong>บัญชีรับโอนเงินบริวารกฐิน</strong><span>${esc(app.bank.name)}</span><span>ชื่อบัญชี: ${esc(app.bank.owner)}</span><div class="bank-account-row"><div class="bank-account">${esc(app.bank.account)}</div><button type="button" class="bank-copy-button secondary" onclick="copyBankAccount()" aria-label="คัดลอกเลขบัญชีธนาคาร">คัดลอกเลขบัญชี</button></div><span id="bankCopyStatus" class="bank-copy-status" role="status" aria-live="polite"></span><img class="bank-qr" src="${BANK_QR_SRC}" alt="Thai QR Payment สำหรับบัญชีกสิกรไทย น.ส. วรรณพร สารภักดิ์" loading="lazy"><button type="button" class="secondary bank-download-button" onclick="downloadBankQr()">บันทึกรูป QR โอนเงิน</button><details class="bank-proof"><summary>ดูภาพรายละเอียดบัญชีธนาคาร</summary><img src="${BANK_ACCOUNT_CARD_SRC}" alt="ข้อมูลบัญชีธนาคารกสิกรไทยที่ผู้จัดงานส่งมา" loading="lazy"></details><small><b>ก่อนโอนเงินโปรดเลือกรายการ ตรวจยอด และตรวจชื่อผู้รับในแอปธนาคารว่า น.ส. วรรณพร สารภักดิ์ พร้อมตรวจยอดให้ถูกต้อง</b> และแนบสลิปพร้อมการส่งรายการ ยอดเงินและจำนวนชิ้นนับหลังผู้ดูแลตรวจสอบและยืนยันเท่านั้น</small></div>`;
+ const banner=app.paymentEnabled?'':'<div class="warning qr-mode-warning"><b>โหมดทดสอบ — ยังไม่เปิดให้แจ้งโอนหรือส่งสลิป</b> กรุณารอประกาศจากผู้จัดงานก่อนทำการโอน</div>';
+ return `<div class="qr-panel">${banner}<strong>บัญชีรับโอนเงินบริวารกฐิน</strong>
+  <span>${esc(UNIVERSITY_BANK.name)}</span>
+  <span>ชื่อบัญชี: ${esc(UNIVERSITY_BANK.owner)}</span>
+  <div class="bank-account-row"><div class="bank-account">${esc(UNIVERSITY_BANK.account)}</div><button type="button" class="bank-copy-button secondary" onclick="copyBankAccount()" aria-label="คัดลอกเลขบัญชีธนาคาร">คัดลอกเลขบัญชี</button></div>
+  <span id="bankCopyStatus" class="bank-copy-status" role="status" aria-live="polite"></span>
+  <img class="bank-qr" src="${BANK_QR_SRC}" alt="QR e-Donation ของบัญชีเงินบริจาคมหาวิทยาลัยราชภัฏมหาสารคาม ธนาคารกรุงไทย" loading="lazy">
+  <button type="button" class="secondary bank-download-button" onclick="downloadBankQr()">บันทึกรูป QR โอนเงิน</button>
+  <small><b>ก่อนโอนเงิน โปรดตรวจสอบชื่อผู้รับในแอปธนาคารให้ตรงกับ “${esc(UNIVERSITY_BANK.owner)}” และตรวจสอบยอดให้ถูกต้อง</b> จากนั้นแนบสลิปเพื่อแจ้งรายการ ผู้ดูแลจะตรวจสอบเงินเข้าจริงก่อนยืนยันยอด</small>
+ </div>`;
 }
 function updateCutoffView_(){
  if(!app)return;
