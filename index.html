@@ -176,10 +176,9 @@ table{border-collapse:collapse;width:100%;min-width:480px;font-size:13px}th,td{t
 <div class="public-filters" aria-label="ค้นหารายชื่อผู้แจ้งโอน">
 <label for="publicSearch">ค้นหารายชื่อที่แสดง</label>
 <input id="publicSearch" type="search" maxlength="80" placeholder="ชื่อผู้บริจาคที่ยินยอมให้แสดง" autocomplete="off">
-<label for="publicStatus">สถานะตรวจสลิป</label>
-<select id="publicStatus"><option value="ALL">ทุกสถานะ</option><option value="รอตรวจสอบ">รอตรวจสอบ</option><option value="ตรวจสอบแล้ว">ตรวจสอบแล้ว</option><option value="ขอข้อมูลเพิ่มเติม">ขอข้อมูลเพิ่มเติม</option></select>
+<p class="helper" role="note">รายชื่อสาธารณะแสดงเฉพาะรายการที่เจ้าหน้าที่ตรวจสอบและยืนยันเงินเข้าแล้ว</p>
 </div>
-<p id="publicFilterCount" class="helper" aria-live="polite">รายการแจ้งโอนล่าสุด</p>
+<p id="publicFilterCount" class="helper" aria-live="polite">รายการที่ตรวจสอบแล้ว</p>
 <div class="table-outer" style="margin-top:14px"><table><thead><tr><th>ชื่อผู้บริจาค</th><th>จำนวนเงิน</th><th>สถานะสลิป</th></tr></thead><tbody id="donorRows">
 
 </tbody></table></div>
@@ -198,8 +197,7 @@ let publicPage=1;
 const PUBLIC_PAGE_SIZE=10;
 function renderPublicRecords(){
  const q=get('publicSearch').value.trim().toLocaleLowerCase('th-TH');
- const state=get('publicStatus').value;
- const matches=publicRecords.filter(r=>(state==='ALL'||r.status===state)&&(!q||String(r.donor).toLocaleLowerCase('th-TH').includes(q)));
+ const matches=publicRecords.filter(r=>(!q||String(r.donor).toLocaleLowerCase('th-TH').includes(q)));
  const pages=Math.max(1,Math.ceil(matches.length/PUBLIC_PAGE_SIZE));
  publicPage=Math.min(Math.max(1,publicPage),pages);
  const rows=get('donorRows');rows.replaceChildren();
@@ -211,13 +209,12 @@ function renderPublicRecords(){
    pill.className='status-pill'+(r.status==='ตรวจสอบแล้ว'?' approved':'');pill.textContent=r.status;status.append(pill);
    tr.append(name,amount,status);rows.append(tr);
  });
- get('publicFilterCount').textContent='พบ '+matches.length+' รายการ (แสดงจากรายการแจ้งโอนล่าสุดไม่เกิน 100 รายการ)';
+ get('publicFilterCount').textContent='พบ '+matches.length+' รายการที่ยืนยันแล้ว (จากข้อมูลล่าสุดไม่เกิน 100 รายการ)';
  get('publicPageInfo').textContent='หน้า '+publicPage+' / '+pages;
  get('publicPrev').disabled=publicPage<=1;get('publicNext').disabled=publicPage>=pages;
 }
 let publicSearchTimer;
 get('publicSearch').addEventListener('input',()=>{clearTimeout(publicSearchTimer);publicSearchTimer=setTimeout(()=>{publicPage=1;renderPublicRecords()},180)});
-get('publicStatus').addEventListener('change',()=>{publicPage=1;renderPublicRecords()});
 get('publicPrev').addEventListener('click',()=>{publicPage--;renderPublicRecords()});
 get('publicNext').addEventListener('click',()=>{publicPage++;renderPublicRecords()});
 renderPublicRecords();
@@ -378,7 +375,7 @@ async function fetchLiveSummary(forceFresh){
     get('approvedCount').textContent=res.approvedCount+' รายการ';
     publicRecords=Array.isArray(res.rows)?res.rows.map(r=>({
       donor:String(r.donor||'ไม่ประสงค์ออกนาม'),amount:Number(r.amount||0),status:String(r.status||'รอตรวจสอบ')
-    })):[];
+    })).filter(r=>r.status==='ตรวจสอบแล้ว'):[];
     publicPage=1;renderPublicRecords();
   }catch(err){
     get('approvedAmount').textContent='—';get('approvedCount').textContent='—';
